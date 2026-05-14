@@ -1,4 +1,4 @@
-#D atastraw CRM — Customer Support Ticketing System
+# Datastraw CRM — Customer Support Ticketing System
 
 A fully functional web-based Customer Support Management System built with Google Apps Script, Google Sheets, and vanilla HTML/CSS/JavaScript.
 
