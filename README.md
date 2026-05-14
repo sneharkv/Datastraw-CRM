@@ -13,7 +13,8 @@ Datastraw CRM is a customer support ticketing system that allows support teams t
  <img width="1366" height="605" alt="image" src="https://github.com/user-attachments/assets/62da55ca-0343-4b9a-b855-4587dcebf5ee" />
 
  ### View Ticket
- <img width="700" height="401" alt="image" src="https://github.com/user-attachments/assets/ebdbb93e-defc-4da8-8f69-1a6faa978a34" />
+ <img width="689" height="390" alt="image" src="https://github.com/user-attachments/assets/27818dd6-4ca0-40cd-b77e-a37091c03b25" />
+
 
 
 
