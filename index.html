@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datastraw CRM</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+  .header {
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: white; padding: 16px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header h1 { font-size: 22px; font-weight: 700; }
+  .header button {
+    background: white; color: #1a73e8; border: none;
+    padding: 8px 18px; border-radius: 6px; font-weight: 600;
+    cursor: pointer; font-size: 14px;
+  }
+  .stats-bar {
+    display: flex; gap: 16px; padding: 16px 24px;
+    background: white; border-bottom: 1px solid #e0e0e0; overflow-x: auto;
+  }
+  .stat-card {
+    background: #f8f9fa; border-radius: 10px; padding: 12px 20px;
+    text-align: center; min-width: 120px; border-left: 4px solid #1a73e8;
+  }
+  .stat-card.pending { border-color: #f9a825; }
+  .stat-card.progress { border-color: #1a73e8; }
+  .stat-card.resolved { border-color: #2e7d32; }
+  .stat-card.waiting { border-color: #e65100; }
+  .stat-card h3 { font-size: 24px; font-weight: 700; }
+  .stat-card p { font-size: 11px; color: #666; margin-top: 2px; }
+  .main { display: flex; height: calc(100vh - 130px); }
+  .left-panel {
+    width: 340px; background: white;
+    border-right: 1px solid #e0e0e0; display: flex; flex-direction: column;
+  }
+  .search-filter { padding: 12px; border-bottom: 1px solid #e0e0e0; background: #f8f9fa; }
+  .search-filter input {
+    width: 100%; padding: 8px 12px; border: 1px solid #ddd;
+    border-radius: 6px; font-size: 13px; margin-bottom: 8px;
+  }
+  .filter-row { display: flex; gap: 6px; }
+  .filter-row select {
+    flex: 1; padding: 6px 8px; border: 1px solid #ddd;
+    border-radius: 6px; font-size: 12px; background: white;
+  }
+  .ticket-list { overflow-y: auto; flex: 1; }
+  .ticket-item {
+    padding: 14px 16px; border-bottom: 1px solid #f0f0f0;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .ticket-item:hover { background: #f0f7ff; }
+  .ticket-item.active { background: #e8f0fe; border-left: 3px solid #1a73e8; }
+  .ticket-item-header { display: flex; justify-content: space-between; align-items: center; }
+  .ticket-id { font-size: 11px; color: #1a73e8; font-weight: 600; }
+  .ticket-name { font-size: 14px; font-weight: 600; margin: 4px 0; }
+  .ticket-issue { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ticket-meta { display: flex; gap: 6px; margin-top: 6px; }
+  .badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+  .badge-pending { background: #fff8e1; color: #f9a825; }
+  .badge-progress { background: #e3f2fd; color: #1a73e8; }
+  .badge-resolved { background: #e8f5e9; color: #2e7d32; }
+  .badge-waiting { background: #fbe9e7; color: #e65100; }
+  .badge-channel { background: #f3e5f5; color: #6a1b9a; }
+  .middle-panel { flex: 1; overflow-y: auto; padding: 24px; background: #f8f9fa; }
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; height: 100%; color: #999;
+  }
+  .empty-state h2 { font-size: 20px; margin-bottom: 8px; }
+  .ticket-detail-card {
+    background: white; border-radius: 12px; padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px;
+  }
+  .detail-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 20px;
+  }
+  .detail-title h2 { font-size: 18px; font-weight: 700; }
+  .detail-title p { color: #666; font-size: 13px; margin-top: 4px; }
+  .detail-actions { display: flex; gap: 8px; }
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .btn-primary { background: #1a73e8; color: white; }
+  .btn-danger { background: #d32f2f; color: white; }
+  .btn-success { background: #2e7d32; color: white; }
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .info-item label { font-size: 11px; color: #888; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px; }
+  .info-item p { font-size: 14px; font-weight: 500; }
+  .info-item input, .info-item select, .info-item textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid #ddd;
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+  .info-item textarea { resize: vertical; min-height: 80px; }
+  .full-width { grid-column: 1 / -1; }
+  .right-panel {
+    width: 280px; background: white;
+    border-left: 1px solid #e0e0e0; padding: 20px; overflow-y: auto;
+  }
+  .right-panel h3 { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 16px; border-bottom: 2px solid #1a73e8; padding-bottom: 8px; }
+  .insight-item { margin-bottom: 14px; }
+  .insight-item label { font-size: 11px; color: #888; display: block; margin-bottom: 4px; }
+  .insight-item p { font-size: 13px; font-weight: 600; }
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+    z-index: 1000; justify-content: center; align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white; border-radius: 12px; padding: 28px;
+    width: 560px; max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 20px; color: #1a73e8; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal-item label { font-size: 12px; color: #555; font-weight: 600; display: block; margin-bottom: 4px; }
+  .modal-item input, .modal-item select, .modal-item textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid #ddd;
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+  .modal-item textarea { min-height: 80px; resize: vertical; }
+  .modal-item.full { grid-column: 1 / -1; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .loading { text-align: center; padding: 40px; color: #666; }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #2e7d32; color: white; padding: 12px 24px;
+    border-radius: 8px; font-size: 14px; font-weight: 600;
+    z-index: 9999; display: none;
+  }
+  .toast.error { background: #d32f2f; }
+  .toast.show { display: block; }
+  .no-tickets { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎫 Datastraw CRM</h1>
+  <button onclick="openModal()">+ New Ticket</button>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><h3 id="statTotal">0</h3><p>Total</p></div>
+  <div class="stat-card pending"><h3 id="statPending">0</h3><p>Pending</p></div>
+  <div class="stat-card progress"><h3 id="statProgress">0</h3><p>In Progress</p></div>
+  <div class="stat-card resolved"><h3 id="statResolved">0</h3><p>Resolved</p></div>
+  <div class="stat-card waiting"><h3 id="statWaiting">0</h3><p>Waiting</p></div>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="search-filter">
+      <input type="text" id="searchInput" placeholder="🔍 Search tickets..." oninput="handleSearch()">
+      <div class="filter-row">
+        <select id="filterStatus" onchange="handleFilter()">
+          <option value="All">All Status</option>
+          <option>Pending</option>
+          <option>In Progress</option>
+          <option>Waiting on Customer</option>
+          <option>Waiting on Third Party</option>
+          <option>Resolved</option>
+        </select>
+        <select id="filterChannel" onchange="handleFilter()">
+          <option value="All">All Channels</option>
+          <option>WhatsApp</option>
+          <option>Instagram</option>
+          <option>Facebook</option>
+          <option>Emails</option>
+          <option>Calls</option>
+        </select>
+      </div>
+    </div>
+    <div class="ticket-list" id="ticketList">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <div class="middle-panel" id="middlePanel">
+    <div class="empty-state">
+      <h2>👈 Select a ticket</h2>
+      <p>Click any ticket from the list to view details</p>
+    </div>
+  </div>
+
+  <div class="right-panel" id="rightPanel">
+    <h3>📊 Insights</h3>
+    <p style="color:#999;font-size:13px;">Select a ticket to view insights</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>+ Create New Ticket</h2>
+    <div class="modal-grid">
+      <div class="modal-item">
+        <label>Customer Name *</label>
+        <input type="text" id="newName" placeholder="Full name">
+      </div>
+      <div class="modal-item">
+        <label>Email *</label>
+        <input type="email" id="newEmail" placeholder="email@example.com">
+      </div>
+      <div class="modal-item">
+        <label>Phone *</label>
+        <input type="text" id="newPhone" placeholder="Phone number">
+      </div>
+      <div class="modal-item">
+        <label>Order ID</label>
+        <input type="text" id="newOrderID" placeholder="ORD001">
+      </div>
+      <div class="modal-item">
+        <label>Channel</label>
+        <select id="newChannel">
+          <option>WhatsApp</option>
+          <option>Instagram</option>
+          <option>Facebook</option>
+          <option>Emails</option>
+          <option>Calls</option>
+        </select>
+      </div>
+      <div class="modal-item">
+        <label>Priority</label>
+        <select id="newPriority">
+          <option>Low</option>
+          <option selected>Medium</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
+      </div>
+      <div class="modal-item">
+        <label>Query Theme</label>
+        <input type="text" id="newQueryTheme" placeholder="e.g. Refund, Delivery">
+      </div>
+      <div class="modal-item">
+        <label>Assigned To</label>
+        <select id="newAssignedTo"><option value="">Unassigned</option></select>
+      </div>
+      <div class="modal-item full">
+        <label>Issue Description *</label>
+        <textarea id="newIssue" placeholder="Describe the issue..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitTicket()">Create Ticket</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var allTickets = [];
+  var allMembers = [];
+  var selectedTicketID = null;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadAllData();
+  });
+
+  function loadAllData() {
+     
+    document.getElementById('ticketList').innerHTML = '<div class="loading">Loading...</div>';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.success) {
+          allTickets = res.tickets || [];
+          allMembers = res.members || [];
+          updateStats(res.stats);
+          renderTicketList(allTickets);
+          populateTeamDropdown();
+        } else {
+          document.getElementById('ticketList').innerHTML = '<div class="no-tickets">No tickets yet!</div>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        document.getElementById('ticketList').innerHTML = '<div class="no-tickets">No tickets yet!</div>';
+      })
+      .getAllData();
+  }
+
+  function updateStats(stats) {
+    document.getElementById('statTotal').textContent = stats.total || 0;
+    document.getElementById('statPending').textContent = stats.pending || 0;
+    document.getElementById('statProgress').textContent = stats.inProgress || 0;
+    document.getElementById('statResolved').textContent = stats.resolved || 0;
+    document.getElementById('statWaiting').textContent = stats.waiting || 0;
+  }
+
+  function populateTeamDropdown() {
+    var sel = document.getElementById('newAssignedTo');
+    sel.innerHTML = '<option value="">Unassigned</option>';
+    allMembers.forEach(function(m) {
+      sel.innerHTML += '<option value="' + m.MemberName + '">' + m.MemberName + ' (' + m.Department + ')</option>';
+    });
+  }
+
+  function renderTicketList(tickets) {
+    var list = document.getElementById('ticketList');
+    if (!tickets || tickets.length === 0) {
+      list.innerHTML = '<div class="no-tickets">No tickets found. Create one!</div>';
+      return;
+    }
+    list.innerHTML = tickets.map(function(t) {
+      return '<div class="ticket-item ' + (t.TicketID === selectedTicketID ? 'active' : '') + '" onclick="selectTicket(\'' + t.TicketID + '\')">' +
+        '<div class="ticket-item-header">' +
+        '<span class="ticket-id">' + t.TicketID + '</span>' +
+        '<span class="badge ' + getBadgeClass(t.Status) + '">' + t.Status + '</span>' +
+        '</div>' +
+        '<div class="ticket-name">' + t.CustomerName + '</div>' +
+        '<div class="ticket-issue">' + t.IssueDescription + '</div>' +
+        '<div class="ticket-meta"><span class="badge badge-channel">' + t.Channel + '</span></div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function selectTicket(ticketID) {
+    selectedTicketID = ticketID;
+    var ticket = allTickets.find(function(t) { return t.TicketID === ticketID; });
+    if (!ticket) return;
+    renderTicketList(allTickets);
+    renderTicketDetail(ticket);
+    renderInsights(ticket);
+  }
+
+  function renderTicketDetail(ticket) {
+    document.getElementById('middlePanel').innerHTML =
+      '<div class="ticket-detail-card">' +
+        '<div class="detail-header">' +
+          '<div class="detail-title"><h2>' + ticket.CustomerName + '</h2><p>' + ticket.TicketID + '</p></div>' +
+          '<div class="detail-actions">' +
+            '<button class="btn btn-primary" onclick="enableEdit()">✏️ Edit</button>' +
+            '<button class="btn btn-danger" onclick="confirmDelete(\'' + ticket.TicketID + '\')">🗑️ Delete</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="info-grid">' +
+          '<div class="info-item"><label>Status</label><p><span class="badge ' + getBadgeClass(ticket.Status) + '">' + ticket.Status + '</span></p></div>' +
+          '<div class="info-item"><label>Priority</label><p>' + (ticket.Priority || 'Medium') + '</p></div>' +
+          '<div class="info-item"><label>Email</label><p>' + ticket.Email + '</p></div>' +
+          '<div class="info-item"><label>Phone</label><p>' + ticket.Phone + '</p></div>' +
+          '<div class="info-item"><label>Channel</label><p>' + ticket.Channel + '</p></div>' +
+          '<div class="info-item"><label>Assigned To</label><p>' + (ticket.AssignedTo || 'Unassigned') + '</p></div>' +
+          '<div class="info-item full-width"><label>Issue</label><p>' + ticket.IssueDescription + '</p></div>' +
+          '<div class="info-item full-width"><label>Resolution Notes</label><p>' + (ticket.ResolutionNotes || 'None') + '</p></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function enableEdit() {
+    var ticket = allTickets.find(function(t) { return t.TicketID === selectedTicketID; });
+    if (!ticket) return;
+    document.getElementById('middlePanel').innerHTML =
+      '<div class="ticket-detail-card">' +
+        '<div class="detail-header">' +
+          '<div class="detail-title"><h2>Editing: ' + ticket.TicketID + '</h2></div>' +
+          '<div class="detail-actions">' +
+            '<button class="btn btn-success" onclick="saveTicket()">💾 Save</button>' +
+            '<button class="btn btn-secondary" onclick="selectTicket(\'' + ticket.TicketID + '\')">Cancel</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="info-grid">' +
+          '<div class="info-item"><label>Name</label><input id="eName" value="' + ticket.CustomerName + '"></div>' +
+          '<div class="info-item"><label>Email</label><input id="eEmail" value="' + ticket.Email + '"></div>' +
+          '<div class="info-item"><label>Phone</label><input id="ePhone" value="' + ticket.Phone + '"></div>' +
+          '<div class="info-item"><label>Order ID</label><input id="eOrderID" value="' + (ticket.OrderID || '') + '"></div>' +
+          '<div class="info-item"><label>Status</label><select id="eStatus">' +
+            ['Pending','In Progress','Waiting on Customer','Waiting on Third Party','Resolved'].map(function(s) {
+              return '<option ' + (ticket.Status === s ? 'selected' : '') + '>' + s + '</option>';
+            }).join('') +
+          '</select></div>' +
+          '<div class="info-item"><label>Priority</label><select id="ePriority">' +
+            ['Low','Medium','High','Critical'].map(function(s) {
+              return '<option ' + (ticket.Priority === s ? 'selected' : '') + '>' + s + '</option>';
+            }).join('') +
+          '</select></div>' +
+          '<div class="info-item"><label>Channel</label><select id="eChannel">' +
+            ['WhatsApp','Instagram','Facebook','Emails','Calls'].map(function(s) {
+              return '<option ' + (ticket.Channel === s ? 'selected' : '') + '>' + s + '</option>';
+            }).join('') +
+          '</select></div>' +
+          '<div class="info-item"><label>Escalation</label><select id="eEscalation">' +
+            ['None','Low','Medium','High','Critical'].map(function(s) {
+              return '<option ' + (ticket.EscalationLevel === s ? 'selected' : '') + '>' + s + '</option>';
+            }).join('') +
+          '</select></div>' +
+          '<div class="info-item"><label>Assigned To</label><input id="eAssignedTo" value="' + (ticket.AssignedTo || '') + '"></div>' +
+          '<div class="info-item"><label>Query Theme</label><input id="eQueryTheme" value="' + (ticket.QueryTheme || '') + '"></div>' +
+          '<div class="info-item full-width"><label>Issue Description</label><textarea id="eIssue">' + ticket.IssueDescription + '</textarea></div>' +
+          '<div class="info-item full-width"><label>Action Taken</label><textarea id="eAction">' + (ticket.ActionTaken || '') + '</textarea></div>' +
+          '<div class="info-item full-width"><label>Resolution Notes</label><textarea id="eResolution">' + (ticket.ResolutionNotes || '') + '</textarea></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function saveTicket() {
+    var data = {
+      customerName: document.getElementById('eName').value,
+      email: document.getElementById('eEmail').value,
+      phone: document.getElementById('ePhone').value,
+      orderID: document.getElementById('eOrderID').value,
+      status: document.getElementById('eStatus').value,
+      priority: document.getElementById('ePriority').value,
+      channel: document.getElementById('eChannel').value,
+      escalationLevel: document.getElementById('eEscalation').value,
+      assignedTo: document.getElementById('eAssignedTo').value,
+      queryTheme: document.getElementById('eQueryTheme').value,
+      issueDescription: document.getElementById('eIssue').value,
+      actionTaken: document.getElementById('eAction').value,
+      resolutionNotes: document.getElementById('eResolution').value,
+      chatTranscript: ''
+    };
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) {
+          showToast('Ticket updated!');
+          loadAllData();
+          setTimeout(function() { selectTicket(selectedTicketID); }, 1000);
+        } else {
+          showToast('Error: ' + res.error, true);
+        }
+      })
+      .updateTicket(selectedTicketID, data);
+  }
+
+  function confirmDelete(ticketID) {
+    if (confirm('Delete this ticket?')) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.success) {
+            showToast('Ticket deleted!');
+            selectedTicketID = null;
+            document.getElementById('middlePanel').innerHTML = '<div class="empty-state"><h2>👈 Select a ticket</h2></div>';
+            loadAllData();
+          }
+        })
+        .deleteTicket(ticketID);
+    }
+  }
+
+  function handleSearch() {
+    var query = document.getElementById('searchInput').value.toLowerCase();
+    if (!query) { renderTicketList(allTickets); return; }
+    var filtered = allTickets.filter(function(t) {
+      return (t.TicketID + t.CustomerName + t.Email + t.Phone + t.OrderID).toLowerCase().includes(query);
+    });
+    renderTicketList(filtered);
+  }
+
+  function handleFilter() {
+    var status = document.getElementById('filterStatus').value;
+    var channel = document.getElementById('filterChannel').value;
+    var filtered = allTickets.filter(function(t) {
+      var matchStatus = status === 'All' || t.Status === status;
+      var matchChannel = channel === 'All' || t.Channel === channel;
+      return matchStatus && matchChannel;
+    });
+    renderTicketList(filtered);
+  }
+
+  function renderInsights(ticket) {
+    document.getElementById('rightPanel').innerHTML =
+      '<h3>📊 Insights</h3>' +
+      '<div class="insight-item"><label>Ticket ID</label><p>' + ticket.TicketID + '</p></div>' +
+      '<div class="insight-item"><label>Status</label><p><span class="badge ' + getBadgeClass(ticket.Status) + '">' + ticket.Status + '</span></p></div>' +
+      '<div class="insight-item"><label>Priority</label><p>' + (ticket.Priority || 'Medium') + '</p></div>' +
+      '<div class="insight-item"><label>Channel</label><p>' + ticket.Channel + '</p></div>' +
+      '<div class="insight-item"><label>Assigned To</label><p>' + (ticket.AssignedTo || 'Unassigned') + '</p></div>' +
+      '<div class="insight-item"><label>Order ID</label><p>' + (ticket.OrderID || 'None') + '</p></div>';
+  }
+
+  function openModal() { document.getElementById('modalOverlay').classList.add('active'); }
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+    ['newName','newEmail','newPhone','newOrderID','newQueryTheme','newIssue'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+  }
+
+  function submitTicket() {
+    var name = document.getElementById('newName').value.trim();
+    var email = document.getElementById('newEmail').value.trim();
+    var phone = document.getElementById('newPhone').value.trim();
+    var issue = document.getElementById('newIssue').value.trim();
+    if (!name || !email || !phone || !issue) { showToast('Fill all required fields!', true); return; }
+    var data = {
+      customerName: name, email: email, phone: phone,
+      orderID: document.getElementById('newOrderID').value,
+      channel: document.getElementById('newChannel').value,
+      priority: document.getElementById('newPriority').value,
+      queryTheme: document.getElementById('newQueryTheme').value,
+      assignedTo: document.getElementById('newAssignedTo').value,
+      issueDescription: issue
+    };
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) {
+          showToast('Ticket ' + res.ticketID + ' created!');
+          closeModal();
+          loadAllData();
+        } else {
+          showToast('Error: ' + res.error, true);
+        }
+      })
+      .createTicket(data);
+  }
+
+  function getBadgeClass(status) {
+    if (status === 'Pending') return 'badge-pending';
+    if (status === 'In Progress') return 'badge-progress';
+    if (status === 'Resolved') return 'badge-resolved';
+    return 'badge-waiting';
+  }
+
+  function showToast(msg, isError) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast' + (isError ? ' error' : '') + ' show';
+    setTimeout(function() { toast.className = 'toast'; }, 3000);
+  }
+</script>
+</body>
+</html>
