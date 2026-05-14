@@ -151,7 +151,7 @@ The database consists of three sheets:
 
   ## 👤 Submitted By
 
-**Name:**Sneha Vishwakrma  
+**Name:** Sneha Vishwakrma  
 **Email:** sneharkv2710@gmail.com
 **Position:** AI + Tech Intern — Datastraw Technologies
 
