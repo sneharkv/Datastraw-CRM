@@ -21,7 +21,17 @@ Datastraw CRM is a customer support ticketing system that allows support teams t
  ### 3. Editing a Ticket:
  <img width="680" height="422" alt="image" src="https://github.com/user-attachments/assets/2fa27345-9c45-4870-80e1-94889a8a5ef6" />
 
+##  Features
 
-
-
-
+- **Ticket Management** — Create, view, edit, and delete support tickets
+- **Smart Search** — Search tickets by name, ticket ID, phone, email, or order ID
+- **Filter System** — Filter tickets by status and communication channel
+- **Status Tracking** — Pending, In Progress, Waiting on Customer, Waiting on Third Party, Resolved
+- **Channel Management** — WhatsApp, Instagram, Facebook, Emails, Calls
+- **Order Integration** — Link tickets to orders and view order details
+- **Team Assignment** — Assign tickets to team members
+- **Dashboard Stats** — Live count of tickets by status
+- **Insights Panel** — Quick view of ticket details in the right panel
+- **Color Coded Badges** — Visual status indicators for quick scanning
+- **Responsive UI** — Professional three panel interface
+ 
